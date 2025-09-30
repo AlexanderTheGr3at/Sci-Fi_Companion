@@ -207,26 +207,6 @@
                                 <input type="text" id="character-name" name="character-name">
                             </div>
                             <div class="field">
-                                <label for="character-class">Class:</label>
-                                <select id="character-class" name="character-class">
-                                    <option value="">Select Class...</option>
-                                    <option value="Soldier">Soldier</option>
-                                    <option value="Engineer">Engineer</option>
-                                    <option value="Adept">Adept</option>
-                                    <option value="Vanguard">Vanguard</option>
-                                    <option value="Sentinel">Sentinel</option>
-                                    <option value="Infiltrator">Infiltrator</option>
-                                </select>
-                            </div>
-                            <div class="field description-field" id="class-description-field" style="display: none;">
-                                <label for="class-description">Class Description:</label>
-                                <textarea id="class-description" name="class-description" readonly></textarea>
-                            </div>
-                            <div class="field description-field" id="class-effects-field" style="display: none;">
-                                <label for="class-effects">Class Effects:</label>
-                                <textarea id="class-effects" name="class-effects" readonly></textarea>
-                            </div>
-                            <div class="field">
                                 <label for="character-race">Race:</label>
                                 <select id="character-race" name="character-race">
                                     <option value="">Select Race...</option>
@@ -249,6 +229,26 @@
                             <div class="field description-field" id="race-effects-field" style="display: none;">
                                 <label for="race-effects">Racial Bonuses:</label>
                                 <textarea id="race-effects" name="race-effects" readonly></textarea>
+                            </div>
+                            <div class="field">
+                                <label for="character-class">Class:</label>
+                                <select id="character-class" name="character-class">
+                                    <option value="">Select Class...</option>
+                                    <option value="Soldier">Soldier</option>
+                                    <option value="Engineer">Engineer</option>
+                                    <option value="Adept">Adept</option>
+                                    <option value="Vanguard">Vanguard</option>
+                                    <option value="Sentinel">Sentinel</option>
+                                    <option value="Infiltrator">Infiltrator</option>
+                                </select>
+                            </div>
+                            <div class="field description-field" id="class-description-field" style="display: none;">
+                                <label for="class-description">Class Description:</label>
+                                <textarea id="class-description" name="class-description" readonly></textarea>
+                            </div>
+                            <div class="field description-field" id="class-effects-field" style="display: none;">
+                                <label for="class-effects">Class Effects:</label>
+                                <textarea id="class-effects" name="class-effects" readonly></textarea>
                             </div>
                             <div class="field">
                                 <label for="character-background">Background:</label>
@@ -280,10 +280,6 @@
                                     </optgroup>
                                 </select>
                             </div>
-                            <div class="field description-field" id="background-description-field" style="display: none;">
-                                <label for="background-description">Background Description:</label>
-                                <textarea id="background-description" name="background-description" readonly></textarea>
-                            </div>
                             <div class="field description-field" id="background-effects-field" style="display: none;">
                                 <label for="background-effects">Background Benefits:</label>
                                 <textarea id="background-effects" name="background-effects" readonly></textarea>
@@ -308,6 +304,10 @@
                                 <input type="number" id="evasion" name="evasion" min="0" max="20" value="0">
                             </div>
                             <div class="attribute">
+                                <label for="speed">Speed:</label>
+                                <input type="number" id="speed" name="speed" min="0" max="20" value="0">
+                            </div>
+                            <div class="attribute">
                                 <label for="charisma">Charisma:</label>
                                 <input type="number" id="charisma" name="charisma" min="0" max="20" value="0">
                             </div>
@@ -325,6 +325,14 @@
                                 <label for="credits">Credits:</label>
                                 <input type="number" id="credits" name="credits" min="0" value="0">
                             </div>
+                        </div>
+                        <div class="clear-section">
+                            <button type="button" id="clear-character-btn" class="clear-btn">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                </svg>
+                                Clear All Data
+                            </button>
                         </div>
                     </section>
 
@@ -441,20 +449,120 @@
                                 <label for="armor">Armor:</label>
                                 <select id="armor" name="armor">
                                     <option value="">Select Armor...</option>
-                                    <optgroup label="Light Armor">
-                                        <option value="Light Combat Armor">Light Combat Armor</option>
-                                        <option value="Explorer Armor">Explorer Armor</option>
-                                        <option value="Stealth Armor">Stealth Armor</option>
+                                    <optgroup label="Light Armor - Sirta Foundation">
+                                        <option value="Phoenix Armor I">Phoenix Armor I</option>
+                                        <option value="Phoenix Armor II">Phoenix Armor II</option>
+                                        <option value="Phoenix Armor III">Phoenix Armor III</option>
                                     </optgroup>
-                                    <optgroup label="Medium Armor">
-                                        <option value="Standard Combat Armor">Standard Combat Armor</option>
-                                        <option value="Tactical Armor">Tactical Armor</option>
-                                        <option value="Barrier Armor">Barrier Armor</option>
+                                    <optgroup label="Light Armor - Serrice Council">
+                                        <option value="Phantom Armor I">Phantom Armor I</option>
+                                        <option value="Phantom Armor II">Phantom Armor II</option>
+                                        <option value="Phantom Armor III">Phantom Armor III</option>
                                     </optgroup>
-                                    <optgroup label="Heavy Armor">
-                                        <option value="Heavy Combat Armor">Heavy Combat Armor</option>
-                                        <option value="Assault Armor">Assault Armor</option>
-                                        <option value="Fortress Armor">Fortress Armor</option>
+                                    <optgroup label="Light Armor - Aldrin Labs">
+                                        <option value="Hydra Armor I">Hydra Armor I</option>
+                                        <option value="Hydra Armor II">Hydra Armor II</option>
+                                        <option value="Hydra Armor III">Hydra Armor III</option>
+                                        <option value="Agent Armor I">Agent Armor I (Turian Only)</option>
+                                        <option value="Agent Armor II">Agent Armor II (Turian Only)</option>
+                                        <option value="Agent Armor III">Agent Armor III (Turian Only)</option>
+                                    </optgroup>
+                                    <optgroup label="Light Armor - Ariake Technologies">
+                                        <option value="Mercenary Armor I">Mercenary Armor I</option>
+                                        <option value="Mercenary Armor II">Mercenary Armor II</option>
+                                        <option value="Mercenary Armor III">Mercenary Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Light Armor - Devlon Industries">
+                                        <option value="Explorer Armor I">Explorer Armor I</option>
+                                        <option value="Explorer Armor II">Explorer Armor II</option>
+                                        <option value="Explorer Armor III">Explorer Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Light Armor - Elkoss Combine">
+                                        <option value="Assassin Armor I">Assassin Armor I (Human Only)</option>
+                                        <option value="Assassin Armor II">Assassin Armor II (Human Only)</option>
+                                        <option value="Assassin Armor III">Assassin Armor III (Human Only)</option>
+                                    </optgroup>
+                                    <optgroup label="Light Armor - Elanus Risk Control">
+                                        <option value="Duelist Armor I">Duelist Armor I</option>
+                                        <option value="Duelist Armor II">Duelist Armor II</option>
+                                        <option value="Duelist Armor III">Duelist Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Elanus Risk Control">
+                                        <option value="Guardian Armor I">Guardian Armor I</option>
+                                        <option value="Guardian Armor II">Guardian Armor II</option>
+                                        <option value="Guardian Armor III">Guardian Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Hahne-Kedar">
+                                        <option value="Mantis Armor I">Mantis Armor I</option>
+                                        <option value="Mantis Armor II">Mantis Armor II</option>
+                                        <option value="Mantis Armor III">Mantis Armor III</option>
+                                        <option value="Silverback Armor I">Silverback Armor I</option>
+                                        <option value="Silverback Armor II">Silverback Armor II</option>
+                                        <option value="Silverback Armor III">Silverback Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Rosenkov Materials">
+                                        <option value="Thermal Armor I">Thermal Armor I</option>
+                                        <option value="Thermal Armor II">Thermal Armor II</option>
+                                        <option value="Thermal Armor III">Thermal Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Aldrin Labs">
+                                        <option value="Onyx Armor I">Onyx Armor I</option>
+                                        <option value="Onyx Armor II">Onyx Armor II</option>
+                                        <option value="Onyx Armor III">Onyx Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Armax Arsenal">
+                                        <option value="Predator Armor I">Predator Armor I</option>
+                                        <option value="Predator Armor II">Predator Armor II</option>
+                                        <option value="Predator Armor III">Predator Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Devlon Industries">
+                                        <option value="Liberator Armor I">Liberator Armor I</option>
+                                        <option value="Liberator Armor II">Liberator Armor II</option>
+                                        <option value="Liberator Armor III">Liberator Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Medium Armor - Elkoss Combine">
+                                        <option value="Gladiator Armor I">Gladiator Armor I</option>
+                                        <option value="Gladiator Armor II">Gladiator Armor II</option>
+                                        <option value="Gladiator Armor III">Gladiator Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Heavy Armor - Elanus Risk Control">
+                                        <option value="Warlord Armor I">Warlord Armor I (Krogan Only)</option>
+                                        <option value="Warlord Armor II">Warlord Armor II (Krogan Only)</option>
+                                        <option value="Warlord Armor III">Warlord Armor III (Krogan Only)</option>
+                                    </optgroup>
+                                    <optgroup label="Heavy Armor - Geth Armory">
+                                        <option value="Battlemaster Armor I">Battlemaster Armor I (Krogan Only)</option>
+                                        <option value="Battlemaster Armor II">Battlemaster Armor II (Krogan Only)</option>
+                                        <option value="Battlemaster Armor III">Battlemaster Armor III (Krogan Only)</option>
+                                        <option value="Berserker Armor I">Berserker Armor I (Krogan Only)</option>
+                                        <option value="Berserker Armor II">Berserker Armor II (Krogan Only)</option>
+                                        <option value="Berserker Armor III">Berserker Armor III (Krogan Only)</option>
+                                        <option value="Rage Armor I">Rage Armor I (Krogan Only)</option>
+                                        <option value="Rage Armor II">Rage Armor II (Krogan Only)</option>
+                                        <option value="Rage Armor III">Rage Armor III (Krogan Only)</option>
+                                    </optgroup>
+                                    <optgroup label="Heavy Armor - Hahne-Kedar">
+                                        <option value="Scorpion Armor I">Scorpion Armor I</option>
+                                        <option value="Scorpion Armor II">Scorpion Armor II</option>
+                                        <option value="Scorpion Armor III">Scorpion Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Heavy Armor - Kassa Fabrication">
+                                        <option value="Colossus Armor I">Colossus Armor I</option>
+                                        <option value="Colossus Armor II">Colossus Armor II</option>
+                                        <option value="Colossus Armor III">Colossus Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Heavy Armor - Rosenkov Materials">
+                                        <option value="Titan Armor I">Titan Armor I</option>
+                                        <option value="Titan Armor II">Titan Armor II</option>
+                                        <option value="Titan Armor III">Titan Armor III</option>
+                                        <option value="Ursa Armor I">Ursa Armor I</option>
+                                        <option value="Ursa Armor II">Ursa Armor II</option>
+                                        <option value="Ursa Armor III">Ursa Armor III</option>
+                                    </optgroup>
+                                    <optgroup label="Heavy Armor - Armax Arsenal">
+                                        <option value="Predator X Armor I">Predator X Armor I</option>
+                                        <option value="Predator X Armor II">Predator X Armor II</option>
+                                        <option value="Predator X Armor III">Predator X Armor III</option>
                                     </optgroup>
                                 </select>
                             </div>

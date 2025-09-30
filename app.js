@@ -11,6 +11,20 @@ let activeTechPowers = [];
 let bioticPowerIdCounter = 1;
 let techPowerIdCounter = 1;
 
+// Base attributes tracking (without bonuses)
+let baseAttributes = {
+    health: 0,
+    combat: 0,
+    evasion: 0,
+    speed: 0,
+    charisma: 0,
+    tech: 0,
+    biotics: 0
+};
+
+// Flag to prevent duplicate event listener setup
+let characterEventListenersSetup = false;
+
 // =========================
 // GAME DATA DEFINITIONS
 // =========================
@@ -45,19 +59,19 @@ const classData = {
 const raceData = {
     'Human': {
         description: 'Adaptable and determined, humans are newcomers to the galactic community but have quickly established themselves as a major power.',
-        effects: '• +1 to any two different attributes\n• Extra skill point at character creation\n• Diplomatic bonus with most species\n• Leadership bonuses in mixed groups'
+        effects: 'Starting Stats: Health 5, Combat 0, Evasion 4, Speed 4, Charisma 0, Tech 0, Biotics 0\n\n• +1 to a stat of your choice\n• Adaptable: Re-roll one failed Charisma or Combat roll per mission'
     },
     'Asari': {
         description: 'Long-lived and naturally biotic, the asari are known for their wisdom, diplomacy, and powerful biotic abilities.',
-        effects: '• +2 to Biotics\n• +1 to Charisma\n• Natural biotic abilities\n• Extended lifespan provides vast experience\n• Diplomatic immunity in Citadel space'
+        effects: 'Starting Stats: Health 5, Combat 0, Evasion 4, Speed 4, Charisma 0, Tech 0, Biotics 1\n\n• +1 to Biotic Energy\n• Meditative Calm: Recover 1 Biotic Energy per mission\n• Proficient in Biotics: One additional biotic power at creation'
     },
     'Turian': {
         description: 'Disciplined militaristic culture with natural tactical aptitude and strong sense of duty and honor.',
-        effects: '• +2 to Combat\n• +1 to Tech\n• Military training and discipline\n• Natural armor provides damage resistance\n• Tactical expertise in organized warfare'
+        effects: 'Starting Stats: Health 5, Combat 1, Evasion 4, Speed 4, Charisma 0, Tech 0, Biotics 0\n\n• +1 to Combat Proficiency\n• Combat Focus: Re-roll one failed Combat roll per mission'
     },
     'Krogan': {
         description: 'Physically powerful and resilient warriors from a harsh homeworld, known for their incredible durability.',
-        effects: '• +3 to Health\n• +1 to Combat\n• Natural regeneration abilities\n• Redundant organ systems\n• Resistance to toxins and radiation'
+        effects: 'Starting Stats: Health 7, Combat 1, Evasion 4, Speed 4, Charisma -1, Tech 0, Biotics 0\n\n• +1 to Health bonus\n• Ignore Heavy Armor Movement Penalties\n• Redundant Organs: Once per battle, ignore fatal damage and remain at 1 HP'
     },
     'Salarian': {
         description: 'Highly intelligent and fast-thinking, salarians excel at science, espionage, and rapid problem-solving.',
@@ -265,46 +279,354 @@ const weaponData = {
 };
 
 const armorData = {
-    // Light Armor
-    'Light Combat Armor': {
-        description: 'Basic protection that doesn\'t impede movement or biotic abilities.',
-        effects: '• Armor Rating: 2\n• No mobility penalties\n• Biotic-friendly\n• Standard protection'
+    // Light Armor - Sirta Foundation: Phoenix Armor
+    'Phoenix Armor I': {
+        description: 'Phoenix Armor emphasizes medical and survival enhancements. Ideal for support and medical roles, it provides modest protection and barriers, supplemented by passive health regeneration.',
+        effects: '• Armor Rating: 1\n• Barriers: 5\n• Tech/Biotic Protection: +1\n• Cost: 1,000 credits\n• Allowed Users: Human, Turian, Quarian'
     },
-    'Explorer Armor': {
-        description: 'Specialized armor for frontier exploration and harsh environments.',
-        effects: '• Armor Rating: 2\n• Environmental protection\n• Enhanced sensors\n• Survival gear integrated'
+    'Phoenix Armor II': {
+        description: 'Phoenix Armor emphasizes medical and survival enhancements. Ideal for support and medical roles, it provides modest protection and barriers, supplemented by passive health regeneration.',
+        effects: '• Armor Rating: 3\n• Barriers: 7\n• Tech/Biotic Protection: +2\n• Cost: 2,500 credits\n• Allowed Users: Human, Turian, Quarian'
     },
-    'Stealth Armor': {
-        description: 'Advanced armor with built-in stealth capabilities.',
-        effects: '• Armor Rating: 1\n• Stealth bonuses\n• Silent movement\n• Reduced signatures'
-    },
-
-    // Medium Armor
-    'Standard Combat Armor': {
-        description: 'Military-grade protection balancing defense and mobility.',
-        effects: '• Armor Rating: 4\n• Balanced protection\n• Military standard\n• Good mobility'
-    },
-    'Tactical Armor': {
-        description: 'Enhanced armor with integrated tactical systems.',
-        effects: '• Armor Rating: 4\n• Tactical HUD\n• Enhanced communications\n• Targeting assistance'
-    },
-    'Barrier Armor': {
-        description: 'Armor enhanced with kinetic barrier technology.',
-        effects: '• Armor Rating: 3\n• Kinetic barriers\n• Energy resistance\n• Shield regeneration'
+    'Phoenix Armor III': {
+        description: 'Phoenix Armor emphasizes medical and survival enhancements. Ideal for support and medical roles, it provides modest protection and barriers, supplemented by passive health regeneration.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +3\n• Medical Enhancement: Once per mission, restore 3 HP at the start of your turn\n• Cost: 6,000 credits\n• Allowed Users: Human, Turian, Quarian'
     },
 
-    // Heavy Armor
-    'Heavy Combat Armor': {
-        description: 'Maximum protection for front-line combat operations.',
-        effects: '• Armor Rating: 6\n• Maximum protection\n• Heavy weapon support\n• Reduced mobility'
+    // Light Armor - Serrice Council: Phantom Armor
+    'Phantom Armor I': {
+        description: 'Phantom Armor specializes in providing strong resistance against tech and biotic attacks. Designed specifically for operatives facing high-tech and biotic threats.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Tech/Biotic Protection: +2\n• Cost: 1,500 credits\n• Allowed Users: Human, Turian, Asari'
     },
-    'Assault Armor': {
-        description: 'Specialized armor for aggressive combat tactics.',
-        effects: '• Armor Rating: 5\n• Assault bonuses\n• Intimidation factor\n• Combat optimization'
+    'Phantom Armor II': {
+        description: 'Phantom Armor specializes in providing strong resistance against tech and biotic attacks. Designed specifically for operatives facing high-tech and biotic threats.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Tech/Biotic Protection: +3\n• Cost: 3,500 credits\n• Allowed Users: Human, Turian, Asari'
     },
-    'Fortress Armor': {
-        description: 'Ultimate protection with integrated weapon systems.',
-        effects: '• Armor Rating: 8\n• Integrated weapons\n• Maximum defense\n• Severe mobility penalties'
+    'Phantom Armor III': {
+        description: 'Phantom Armor specializes in providing strong resistance against tech and biotic attacks. Designed specifically for operatives facing high-tech and biotic threats.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Tech/Biotic Protection: +4\n• Biotic Attunement: Once per mission, reduce incoming biotic damage by 50% for one turn\n• Cost: 8,000 credits\n• Allowed Users: Human, Turian, Asari'
+    },
+
+    // Light Armor - Aldrin Labs: Hydra Armor
+    'Hydra Armor I': {
+        description: 'Hydra Armor is practical, mass-produced armor designed for operatives requiring balanced defense and mobility.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Cost: 1,500 credits\n• Allowed Users: Human, Quarian'
+    },
+    'Hydra Armor II': {
+        description: 'Hydra Armor is practical, mass-produced armor designed for operatives requiring balanced defense and mobility.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,500 credits\n• Allowed Users: Human, Quarian'
+    },
+    'Hydra Armor III': {
+        description: 'Hydra Armor is practical, mass-produced armor designed for operatives requiring balanced defense and mobility.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Energy Efficiency: Once per mission, reduce the Biotic Energy cost of your next biotic power by 5\n• Cost: 8,000 credits\n• Allowed Users: Human, Quarian'
+    },
+
+    // Light Armor - Aldrin Labs: Agent Armor
+    'Agent Armor I': {
+        description: 'Agent Armor is a versatile, mass-produced Turian-exclusive light armor set. Reliable and affordable but slightly less protective compared to premium armor brands.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Cost: 1,500 credits\n• Allowed Users: Turian only'
+    },
+    'Agent Armor II': {
+        description: 'Agent Armor is a versatile, mass-produced Turian-exclusive light armor set. Reliable and affordable but slightly less protective compared to premium armor brands.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,500 credits\n• Allowed Users: Turian only'
+    },
+    'Agent Armor III': {
+        description: 'Agent Armor is a versatile, mass-produced Turian-exclusive light armor set. Reliable and affordable but slightly less protective compared to premium armor brands.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Cloak and Dagger: When wearer eliminates an enemy in melee, gain +2" movement\n• Cost: 8,000 credits\n• Allowed Users: Turian only'
+    },
+
+    // Light Armor - Ariake Technologies: Mercenary Armor
+    'Mercenary Armor I': {
+        description: 'Mercenary Armor is renowned for its high-grade ablative weave technology. This armor excels in offering balanced protection and improved survivability through damage mitigation.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Cost: 1,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Mercenary Armor II': {
+        description: 'Mercenary Armor is renowned for its high-grade ablative weave technology. This armor excels in offering balanced protection and improved survivability through damage mitigation.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Mercenary Armor III': {
+        description: 'Mercenary Armor is renowned for its high-grade ablative weave technology. This armor excels in offering balanced protection and improved survivability through damage mitigation.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Enhanced Ablative Weave: Once per mission, reduce incoming weapon damage by 50% for one turn\n• Cost: 8,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Light Armor - Devlon Industries: Explorer Armor
+    'Explorer Armor I': {
+        description: 'Explorer Armor is designed specifically for environmental resilience. Favored by adventurers and explorers, this armor provides balanced protection and barrier strength.',
+        effects: '• Armor Rating: 1\n• Barriers: 4\n• Tech/Biotic Protection: +1\n• Cost: 1,000 credits\n• Allowed Users: Human, Turian, Quarian, Asari'
+    },
+    'Explorer Armor II': {
+        description: 'Explorer Armor is designed specifically for environmental resilience. Favored by adventurers and explorers, this armor provides balanced protection and barrier strength.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Tech/Biotic Protection: +2\n• Cost: 2,500 credits\n• Allowed Users: Human, Turian, Quarian, Asari'
+    },
+    'Explorer Armor III': {
+        description: 'Explorer Armor is designed specifically for environmental resilience. Favored by adventurers and explorers, this armor provides balanced protection and barrier strength.',
+        effects: '• Armor Rating: 3\n• Barriers: 8\n• Tech/Biotic Protection: +3\n• Environmental Seals: Grants resistance to Level 1 environmental hazards\n• Cost: 5,500 credits\n• Allowed Users: Human, Turian, Quarian, Asari'
+    },
+
+    // Light Armor - Elkoss Combine: Assassin Armor
+    'Assassin Armor I': {
+        description: 'Assassin Armor is a budget-friendly, functional armor that prioritizes simplicity and effectiveness. Designed for human operatives, it offers reliable protection at an affordable price.',
+        effects: '• Armor Rating: 2\n• Barriers: 5\n• Cost: 900 credits\n• Allowed Users: Human'
+    },
+    'Assassin Armor II': {
+        description: 'Assassin Armor is a budget-friendly, functional armor that prioritizes simplicity and effectiveness. Designed for human operatives, it offers reliable protection at an affordable price.',
+        effects: '• Armor Rating: 4\n• Barriers: 7\n• Cost: 2,200 credits\n• Allowed Users: Human'
+    },
+    'Assassin Armor III': {
+        description: 'Assassin Armor is a budget-friendly, functional armor that prioritizes simplicity and effectiveness. Designed for human operatives, it offers reliable protection at an affordable price.',
+        effects: '• Armor Rating: 6\n• Barriers: 9\n• Shadow Operative: Once per mission, reroll one failed hit roll\n• Cost: 5,000 credits\n• Allowed Users: Human'
+    },
+
+    // Light Armor - ERCS: Duelist Armor
+    'Duelist Armor I': {
+        description: 'Duelist Armor is a budget-friendly option emphasizing mobility and agile defense. Designed for operatives who rely more on avoiding attacks rather than enduring them.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Cost: 1,250 credits\n• Allowed Users: Human, Turian'
+    },
+    'Duelist Armor II': {
+        description: 'Duelist Armor is a budget-friendly option emphasizing mobility and agile defense. Designed for operatives who rely more on avoiding attacks rather than enduring them.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,000 credits\n• Allowed Users: Human, Turian'
+    },
+    'Duelist Armor III': {
+        description: 'Duelist Armor is a budget-friendly option emphasizing mobility and agile defense. Designed for operatives who rely more on avoiding attacks rather than enduring them.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Quick Reflexes: Once per mission, after an attack is declared against you but before it is rolled, gain +2 Evasion for the rest of the turn\n• Cost: 7,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Medium Armor - ERCS: Guardian Armor
+    'Guardian Armor I': {
+        description: 'Guardian Armor is a cost-effective armor series designed for affordability and practical defense. Ideal for budget-conscious operatives, it provides decent protection without sacrificing mobility or simplicity.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Cost: 1,250 credits\n• Allowed Users: Human, Turian'
+    },
+    'Guardian Armor II': {
+        description: 'Guardian Armor is a cost-effective armor series designed for affordability and practical defense. Ideal for budget-conscious operatives, it provides decent protection without sacrificing mobility or simplicity.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,000 credits\n• Allowed Users: Human, Turian'
+    },
+    'Guardian Armor III': {
+        description: 'Guardian Armor is a cost-effective armor series designed for affordability and practical defense. Ideal for budget-conscious operatives, it provides decent protection without sacrificing mobility or simplicity.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Shock Absorption Padding: Once per mission, negate a Stun or Knockdown effect immediately after it is applied to the wearer\n• Cost: 7,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Medium Armor - Hahne-Kedar: Mantis Armor
+    'Mantis Armor I': {
+        description: 'Mantis Armor is versatile medium armor designed for operatives engaged in direct combat situations. Offering balanced protection, barriers, and moderate tech/biotic resistance.',
+        effects: '• Armor Rating: 3\n• Barriers: 7\n• Cost: 2,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Mantis Armor II': {
+        description: 'Mantis Armor is versatile medium armor designed for operatives engaged in direct combat situations. Offering balanced protection, barriers, and moderate tech/biotic resistance.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +1\n• Cost: 5,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Mantis Armor III': {
+        description: 'Mantis Armor is versatile medium armor designed for operatives engaged in direct combat situations. Offering balanced protection, barriers, and moderate tech/biotic resistance.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +2\n• Precision Targeting Suite: Once per mission, add +1 to your combat rolls for the remainder of the turn\n• Cost: 12,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Medium Armor - Hahne-Kedar: Silverback Armor
+    'Silverback Armor I': {
+        description: 'Silverback Armor is sturdy and dependable medium armor designed for frontline command and battlefield leadership. It provides strong protection and superior tech/biotic resistance.',
+        effects: '• Armor Rating: 3\n• Barriers: 7\n• Tech/Biotic Protection: +1\n• Cost: 2,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Silverback Armor II': {
+        description: 'Silverback Armor is sturdy and dependable medium armor designed for frontline command and battlefield leadership. It provides strong protection and superior tech/biotic resistance.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +2\n• Cost: 5,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Silverback Armor III': {
+        description: 'Silverback Armor is sturdy and dependable medium armor designed for frontline command and battlefield leadership. It provides strong protection and superior tech/biotic resistance.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +3\n• Hold the Line: Once per mission, you and all allies within 3" gain +1 Armor until the start of your next turn\n• Cost: 12,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Medium Armor - Rosenkov Materials: Thermal Armor
+    'Thermal Armor I': {
+        description: 'Thermal Armor is engineered for operatives working in hazardous environments. Its integrated environmental shielding and thermal regulation systems make it ideal for survival in extreme conditions.',
+        effects: '• Armor Rating: 3\n• Barriers: 7\n• Tech/Biotic Protection: +1\n• Cost: 3,000 credits\n• Allowed Users: Human, Turian'
+    },
+    'Thermal Armor II': {
+        description: 'Thermal Armor is engineered for operatives working in hazardous environments. Its integrated environmental shielding and thermal regulation systems make it ideal for survival in extreme conditions.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +2\n• Cost: 6,500 credits\n• Allowed Users: Human, Turian'
+    },
+    'Thermal Armor III': {
+        description: 'Thermal Armor is engineered for operatives working in hazardous environments. Its integrated environmental shielding and thermal regulation systems make it ideal for survival in extreme conditions.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +3\n• Thermal Conditioning: Ignore damage from environmental hazards or hazard-based effects\n• Cost: 14,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Medium Armor - Aldrin Labs: Onyx Armor
+    'Onyx Armor I': {
+        description: 'Onyx Armor is medium armor known for its reliability and affordability. Favored by versatile operatives, it provides balanced protection and barrier strength without specialized tech or biotic protection.',
+        effects: '• Armor Rating: 2\n• Barriers: 6\n• Cost: 1,500 credits\n• Allowed Users: Human, Turian, Quarian'
+    },
+    'Onyx Armor II': {
+        description: 'Onyx Armor is medium armor known for its reliability and affordability. Favored by versatile operatives, it provides balanced protection and barrier strength without specialized tech or biotic protection.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,500 credits\n• Allowed Users: Human, Turian, Quarian'
+    },
+    'Onyx Armor III': {
+        description: 'Onyx Armor is medium armor known for its reliability and affordability. Favored by versatile operatives, it provides balanced protection and barrier strength without specialized tech or biotic protection.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Lightweight Build: Passive effect. Gain +1" movement while wearing this armor\n• Cost: 8,000 credits\n• Allowed Users: Human, Turian, Quarian'
+    },
+
+    // Medium Armor - Armax Arsenal: Predator Armor
+    'Predator Armor I': {
+        description: 'Predator Armor is high-performance, military-grade medium armor designed for intense combat scenarios. It features strong barriers, solid armor plating, and considerable tech and biotic defense.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Tech/Biotic Protection: +1\n• Cost: 5,000 credits\n• Allowed Users: Human, Turian, Krogan'
+    },
+    'Predator Armor II': {
+        description: 'Predator Armor is high-performance, military-grade medium armor designed for intense combat scenarios. It features strong barriers, solid armor plating, and considerable tech and biotic defense.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Tech/Biotic Protection: +2\n• Cost: 10,000 credits\n• Allowed Users: Human, Turian, Krogan'
+    },
+    'Predator Armor III': {
+        description: 'Predator Armor is high-performance, military-grade medium armor designed for intense combat scenarios. It features strong barriers, solid armor plating, and considerable tech and biotic defense.',
+        effects: '• Armor Rating: 8\n• Barriers: 12\n• Tech/Biotic Protection: +3\n• Shield Overload: Once per mission, when your Barriers drop to 0, instantly regain 3 Barriers\n• Cost: 20,000 credits\n• Allowed Users: Human, Turian, Krogan'
+    },
+
+    // Medium Armor - Devlon Industries: Liberator Armor
+    'Liberator Armor I': {
+        description: 'Liberator Armor provides robust environmental hazard resistance, suitable for operatives engaging in varied planetary operations. Balanced armor protection combined with reliable barriers.',
+        effects: '• Armor Rating: 2\n• Barriers: 5\n• Cost: 1,500 credits\n• Allowed Users: Human, Turian, Krogan'
+    },
+    'Liberator Armor II': {
+        description: 'Liberator Armor provides robust environmental hazard resistance, suitable for operatives engaging in varied planetary operations. Balanced armor protection combined with reliable barriers.',
+        effects: '• Armor Rating: 4\n• Barriers: 7\n• Tech/Biotic Protection: +1\n• Cost: 3,500 credits\n• Allowed Users: Human, Turian, Krogan'
+    },
+    'Liberator Armor III': {
+        description: 'Liberator Armor provides robust environmental hazard resistance, suitable for operatives engaging in varied planetary operations. Balanced armor protection combined with reliable barriers.',
+        effects: '• Armor Rating: 6\n• Barriers: 9\n• Tech/Biotic Protection: +2\n• Environmental Seals: Provides resistance to environmental hazards\n• Cost: 8,000 credits\n• Allowed Users: Human, Turian, Krogan'
+    },
+
+    // Medium Armor - Elkoss Combine: Gladiator Armor
+    'Gladiator Armor I': {
+        description: 'Gladiator Armor provides affordable and functional protection for frontline operatives. The armor emphasizes resilience and combat effectiveness.',
+        effects: '• Armor Rating: 2\n• Barriers: 5\n• Cost: 900 credits\n• Allowed Users: Human, Turian'
+    },
+    'Gladiator Armor II': {
+        description: 'Gladiator Armor provides affordable and functional protection for frontline operatives. The armor emphasizes resilience and combat effectiveness.',
+        effects: '• Armor Rating: 4\n• Barriers: 7\n• Cost: 2,200 credits\n• Allowed Users: Human, Turian'
+    },
+    'Gladiator Armor III': {
+        description: 'Gladiator Armor provides affordable and functional protection for frontline operatives. The armor emphasizes resilience and combat effectiveness.',
+        effects: '• Armor Rating: 6\n• Barriers: 9\n• Gladiator\'s Guard: Once per mission, when targeted by an attack but before damage is rolled, gain +1 Armor for the rest of the turn\n• Cost: 5,000 credits\n• Allowed Users: Human, Turian'
+    },
+
+    // Heavy Armor - ERCS: Warlord Armor
+    'Warlord Armor I': {
+        description: 'Warlord Armor is an affordable yet sturdy heavy armor specifically designed for Krogan warriors. The armor provides reliable protection at the expense of advanced shielding and mobility.',
+        effects: '• Armor Rating: 3\n• Barriers: 7\n• Cost: 2,500 credits\n• Allowed Users: Krogan'
+    },
+    'Warlord Armor II': {
+        description: 'Warlord Armor is an affordable yet sturdy heavy armor specifically designed for Krogan warriors. The armor provides reliable protection at the expense of advanced shielding and mobility.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Cost: 5,500 credits\n• Allowed Users: Krogan'
+    },
+    'Warlord Armor III': {
+        description: 'Warlord Armor is an affordable yet sturdy heavy armor specifically designed for Krogan warriors. The armor provides reliable protection at the expense of advanced shielding and mobility.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Heavyweight Build: Passive effect. Wearer suffers -1" movement but gains +1 melee damage permanently\n• Cost: 12,000 credits\n• Allowed Users: Krogan'
+    },
+
+    // Heavy Armor - Geth Armory: Battlemaster Armor
+    'Battlemaster Armor I': {
+        description: 'Battlemaster Armor is elite heavy armor designed exclusively for Krogan warriors. It provides exceptional barriers and outstanding tech/biotic protection.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +3\n• Cost: 70,000 credits\n• Allowed Users: Krogan'
+    },
+    'Battlemaster Armor II': {
+        description: 'Battlemaster Armor is elite heavy armor designed exclusively for Krogan warriors. It provides exceptional barriers and outstanding tech/biotic protection.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +4\n• Cost: 350,000 credits\n• Allowed Users: Krogan'
+    },
+    'Battlemaster Armor III': {
+        description: 'Battlemaster Armor is elite heavy armor designed exclusively for Krogan warriors. It provides exceptional barriers and outstanding tech/biotic protection.',
+        effects: '• Armor Rating: 9\n• Barriers: 13\n• Tech/Biotic Protection: +5\n• Geth Shielding: Once per mission, negate one tech or biotic attack completely\n• Cost: 800,000 credits\n• Allowed Users: Krogan'
+    },
+
+    // Heavy Armor - Geth Armory: Berserker Armor
+    'Berserker Armor I': {
+        description: 'Berserker Armor is elite heavy armor designed specifically for Krogan warriors. It provides exceptional protection, superior barriers, and strong tech/biotic defenses.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +3\n• Cost: 70,000 credits\n• Allowed Users: Krogan'
+    },
+    'Berserker Armor II': {
+        description: 'Berserker Armor is elite heavy armor designed specifically for Krogan warriors. It provides exceptional protection, superior barriers, and strong tech/biotic defenses.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +4\n• Cost: 350,000 credits\n• Allowed Users: Krogan'
+    },
+    'Berserker Armor III': {
+        description: 'Berserker Armor is elite heavy armor designed specifically for Krogan warriors. It provides exceptional protection, superior barriers, and strong tech/biotic defenses.',
+        effects: '• Armor Rating: 9\n• Barriers: 13\n• Tech/Biotic Protection: +5\n• Berserker Rage: Once per mission, gain +2 melee damage on the next melee attack made this turn\n• Cost: 800,000 credits\n• Allowed Users: Krogan'
+    },
+
+    // Heavy Armor - Geth Armory: Rage Armor
+    'Rage Armor I': {
+        description: 'Rage Armor is a premium Krogan-exclusive armor set. It\'s designed with superior shields and exceptional tech/biotic resistance, ideal for elite Krogan warriors.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +3\n• Cost: 70,000 credits\n• Allowed Users: Krogan only'
+    },
+    'Rage Armor II': {
+        description: 'Rage Armor is a premium Krogan-exclusive armor set. It\'s designed with superior shields and exceptional tech/biotic resistance, ideal for elite Krogan warriors.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +4\n• Cost: 350,000 credits\n• Allowed Users: Krogan only'
+    },
+    'Rage Armor III': {
+        description: 'Rage Armor is a premium Krogan-exclusive armor set. It\'s designed with superior shields and exceptional tech/biotic resistance, ideal for elite Krogan warriors.',
+        effects: '• Armor Rating: 9\n• Barriers: 13\n• Tech/Biotic Protection: +5\n• Emergency Barrier: Once per mission, when Barriers are depleted, instantly gain 3 temporary Barriers\n• Cost: 800,000 credits\n• Allowed Users: Krogan only'
+    },
+
+    // Heavy Armor - Hahne-Kedar: Scorpion Armor
+    'Scorpion Armor I': {
+        description: 'Scorpion Armor is rugged, frontline armor designed to withstand disorienting force and stay operational. It provides solid physical and barrier protection with moderate tech/biotic resistance.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Scorpion Armor II': {
+        description: 'Scorpion Armor is rugged, frontline armor designed to withstand disorienting force and stay operational. It provides solid physical and barrier protection with moderate tech/biotic resistance.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Tech/Biotic Protection: +1\n• Cost: 6,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Scorpion Armor III': {
+        description: 'Scorpion Armor is rugged, frontline armor designed to withstand disorienting force and stay operational. It provides solid physical and barrier protection with moderate tech/biotic resistance.',
+        effects: '• Armor Rating: 8\n• Barriers: 12\n• Tech/Biotic Protection: +2\n• Shock Stabilizers: Once per mission, ignore the effects of being Stunned or made Prone\n• Cost: 14,000 credits\n• Allowed Users: Human, Krogan'
+    },
+
+    // Heavy Armor - Kassa Fabrication: Colossus Armor
+    'Colossus Armor I': {
+        description: 'The Colossus Armor series represents the pinnacle of personal protection. Known for outstanding durability and superior barrier regeneration, it\'s the top choice for elite operatives.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +1\n• Cost: 174,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Colossus Armor II': {
+        description: 'The Colossus Armor series represents the pinnacle of personal protection. Known for outstanding durability and superior barrier regeneration, it\'s the top choice for elite operatives.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +2\n• Cost: 420,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Colossus Armor III': {
+        description: 'The Colossus Armor series represents the pinnacle of personal protection. Known for outstanding durability and superior barrier regeneration, it\'s the top choice for elite operatives.',
+        effects: '• Armor Rating: 9\n• Barriers: 13\n• Tech/Biotic Protection: +3\n• Micro-Generator Shielding: Once per mission, instantly restore 5 Barriers\n• Cost: 560,000 credits\n• Allowed Users: Human, Krogan'
+    },
+
+    // Heavy Armor - Rosenkov Materials: Titan Armor
+    'Titan Armor I': {
+        description: 'Titan Armor is highly durable heavy armor known for robust and reactive defenses. Ideal for front-line operatives, Titan Armor provides substantial barriers and armor protection.',
+        effects: '• Armor Rating: 4\n• Barriers: 8\n• Cost: 3,500 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Titan Armor II': {
+        description: 'Titan Armor is highly durable heavy armor known for robust and reactive defenses. Ideal for front-line operatives, Titan Armor provides substantial barriers and armor protection.',
+        effects: '• Armor Rating: 6\n• Barriers: 10\n• Tech/Biotic Protection: +1\n• Cost: 8,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Titan Armor III': {
+        description: 'Titan Armor is highly durable heavy armor known for robust and reactive defenses. Ideal for front-line operatives, Titan Armor provides substantial barriers and armor protection.',
+        effects: '• Armor Rating: 8\n• Barriers: 12\n• Tech/Biotic Protection: +2\n• Reactive Plating: Once per mission, after taking damage, gain +2 Armor for the rest of the turn\n• Cost: 18,000 credits\n• Allowed Users: Human, Krogan'
+    },
+
+    // Heavy Armor - Rosenkov Materials: Ursa Armor
+    'Ursa Armor I': {
+        description: 'Ursa Armor is Rosenkov Materials\' premier tank-class armor. Forged for maximum battlefield resilience, it allows frontline units to absorb punishment and keep pressing forward.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +1\n• Cost: 6,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Ursa Armor II': {
+        description: 'Ursa Armor is Rosenkov Materials\' premier tank-class armor. Forged for maximum battlefield resilience, it allows frontline units to absorb punishment and keep pressing forward.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +2\n• Cost: 13,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Ursa Armor III': {
+        description: 'Ursa Armor is Rosenkov Materials\' premier tank-class armor. Forged for maximum battlefield resilience, it allows frontline units to absorb punishment and keep pressing forward.',
+        effects: '• Armor Rating: 9\n• Barriers: 13\n• Tech/Biotic Protection: +3\n• Unstoppable Bulk: Once per mission, when you take damage, reduce it by 2 and become immune to being Stunned or made Prone for the rest of the turn\n• Cost: 28,000 credits\n• Allowed Users: Human, Krogan'
+    },
+
+    // Heavy Armor - Armax Arsenal: Predator X Armor
+    'Predator X Armor I': {
+        description: 'Predator X Armor is a heavy-duty variant designed for maximum frontline durability and combat resilience. This armor excels in providing substantial physical protection and robust barriers.',
+        effects: '• Armor Rating: 5\n• Barriers: 9\n• Tech/Biotic Protection: +1\n• Cost: 7,500 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Predator X Armor II': {
+        description: 'Predator X Armor is a heavy-duty variant designed for maximum frontline durability and combat resilience. This armor excels in providing substantial physical protection and robust barriers.',
+        effects: '• Armor Rating: 7\n• Barriers: 11\n• Tech/Biotic Protection: +2\n• Cost: 15,000 credits\n• Allowed Users: Human, Krogan'
+    },
+    'Predator X Armor III': {
+        description: 'Predator X Armor is a heavy-duty variant designed for maximum frontline durability and combat resilience. This armor excels in providing substantial physical protection and robust barriers.',
+        effects: '• Armor Rating: 9\n• Barriers: 13\n• Tech/Biotic Protection: +3\n• Fortress Protocol: Once per mission, gain +2 Armor but -1" movement for the next 2 turns\n• Cost: 30,000 credits\n• Allowed Users: Human, Krogan'
     }
 };
 
@@ -621,6 +943,9 @@ function setupEventListeners() {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
+
+    // Character sheet event listeners (try to set up immediately, will retry when character view opens)
+    setupCharacterEventListeners();
 }
 
 // =========================
@@ -650,6 +975,9 @@ function initializeCharacterView() {
     // Initialize character sheet functionality
     console.log('Character view initialized');
     initializeCharacterSheet();
+
+    // Make sure character event listeners are set up now that view is active
+    setupCharacterEventListeners();
 }
 
 // =========================
@@ -983,9 +1311,6 @@ let activeStatusEffects = [];
 function initializeCharacterSheet() {
     console.log('Initializing character sheet...');
 
-    // Setup event listeners for character sheet
-    setupCharacterEventListeners();
-
     // Load saved squad data
     loadSquadData();
 
@@ -996,10 +1321,17 @@ function initializeCharacterSheet() {
 }
 
 function setupCharacterEventListeners() {
+    if (characterEventListenersSetup) {
+        console.log('Character event listeners already set up, skipping');
+        return;
+    }
+
+    console.log('Setting up character event listeners...');
+
     // Character field change listeners for auto-save
     const fields = [
         'character-name', 'character-class', 'character-race', 'character-background',
-        'health', 'combat', 'evasion', 'charisma', 'tech', 'biotics', 'credits',
+        'health', 'combat', 'evasion', 'speed', 'charisma', 'tech', 'biotics', 'credits',
         'primary-weapon', 'secondary-weapon', 'armor', 'omni-tool', 'biotic-amp',
         'hp-current', 'hp-max', 'biotic-energy-current', 'biotic-energy-max',
         'tech-points-current', 'tech-points-max', 'kb-current', 'kb-max',
@@ -1011,6 +1343,12 @@ function setupCharacterEventListeners() {
         if (element) {
             element.addEventListener('input', debounce(autoSaveCharacter, 500));
             element.addEventListener('change', autoSaveCharacter);
+
+            // Special handling for attributes that affect derived stats
+            if (['health', 'tech', 'biotics'].includes(fieldId)) {
+                element.addEventListener('input', updateDerivedStats);
+                element.addEventListener('change', updateDerivedStats);
+            }
         }
     });
 
@@ -1058,11 +1396,15 @@ function setupCharacterEventListeners() {
         }
     });
 
-    // Status effects system
-    setupStatusEffectsListeners();
+    // Clear button event listener
+    const clearBtn = document.getElementById('clear-character-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearAllCharacterData);
+    }
 
-    // Powers systems
-    setupPowersListeners();
+    // Mark as set up to prevent duplicate setup
+    characterEventListenersSetup = true;
+    console.log('Character event listeners setup complete');
 }
 
 function setupStatusEffectsListeners() {
@@ -1121,6 +1463,7 @@ function saveCurrentCharacterToMemory() {
         health: getValue('health'),
         combat: getValue('combat'),
         evasion: getValue('evasion'),
+        speed: getValue('speed'),
         charisma: getValue('charisma'),
         tech: getValue('tech'),
         biotics: getValue('biotics'),
@@ -1149,7 +1492,10 @@ function saveCurrentCharacterToMemory() {
 
         // Powers
         bioticPowers: [...activeBioticPowers],
-        techPowers: [...activeTechPowers]
+        techPowers: [...activeTechPowers],
+
+        // Base attributes (without class/race bonuses)
+        baseAttributes: { ...baseAttributes }
     };
 }
 
@@ -1166,6 +1512,7 @@ function loadCharacterFromMemory(characterIndex) {
     setValue('health', data.health || '0');
     setValue('combat', data.combat || '0');
     setValue('evasion', data.evasion || '0');
+    setValue('speed', data.speed || '0');
     setValue('charisma', data.charisma || '0');
     setValue('tech', data.tech || '0');
     setValue('biotics', data.biotics || '0');
@@ -1201,6 +1548,12 @@ function loadCharacterFromMemory(characterIndex) {
     updateBioticPowersDisplay();
     updateTechPowersDisplay();
 
+    // Load base attributes and recalculate with bonuses
+    if (data.baseAttributes) {
+        baseAttributes = { ...data.baseAttributes };
+        recalculateAllAttributes(); // Recalculate with current class/race bonuses
+    }
+
     // Update description fields based on loaded selections
     updateClassDescription();
     updateRaceDescription();
@@ -1232,6 +1585,63 @@ function autoSaveCharacter() {
     saveCurrentCharacterToMemory();
     // Auto-save the squad data to localStorage
     localStorage.setItem('scifiRpgSquad', JSON.stringify(squadData));
+}
+
+function clearAllCharacterData() {
+    // Confirm with user before clearing
+    if (!confirm('Are you sure you want to clear all character data? This action cannot be undone.')) {
+        return;
+    }
+
+    // Clear all form fields
+    const allFields = [
+        'character-name', 'character-class', 'character-race', 'character-background',
+        'health', 'combat', 'evasion', 'speed', 'charisma', 'tech', 'biotics', 'credits',
+        'primary-weapon', 'secondary-weapon', 'armor', 'omni-tool', 'biotic-amp',
+        'hp-current', 'hp-max', 'biotic-energy-current', 'biotic-energy-max',
+        'tech-points-current', 'tech-points-max', 'kb-current', 'kb-max',
+        'bb-current', 'bb-max', 'armor-value'
+    ];
+
+    allFields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            if (element.type === 'number') {
+                element.value = '0';
+            } else {
+                element.value = '';
+            }
+        }
+    });
+
+    // Clear base attributes
+    baseAttributes = {
+        health: 0, combat: 0, evasion: 0, speed: 0,
+        charisma: 0, tech: 0, biotics: 0
+    };
+
+    // Clear powers
+    activeBioticPowers = [];
+    activeTechPowers = [];
+    updateBioticPowersDisplay();
+    updateTechPowersDisplay();
+
+    // Clear status effects
+    activeStatusEffects = [];
+    updateStatusEffectsDisplay();
+
+    // Clear equipment descriptions
+    document.getElementById('equipment-description').innerHTML = '';
+
+    // Clear class/race/background descriptions
+    document.getElementById('class-description').innerHTML = '';
+    document.getElementById('race-description').innerHTML = '';
+    document.getElementById('background-description').innerHTML = '';
+
+    // Save the cleared state
+    autoSaveCharacter();
+
+    console.log('All character data cleared');
 }
 
 function loadSquadData() {
@@ -1339,15 +1749,215 @@ function adjustPool(poolType, delta) {
     }
 }
 
-// Basic stat update functions
+// Stat update functions based on class and race selections
 function updateClassStats() {
-    // Basic implementation - can be expanded
+    recalculateAllAttributes();
     autoSaveCharacter();
 }
 
 function updateRaceStats() {
-    // Basic implementation - can be expanded
+    recalculateAllAttributes();
     autoSaveCharacter();
+}
+
+function recalculateAllAttributes() {
+    const classSelect = document.getElementById('character-class');
+    const raceSelect = document.getElementById('character-race');
+
+    // Calculate total bonuses from class and race
+    let totalBonuses = {
+        health: 0, combat: 0, evasion: 0, speed: 0,
+        charisma: 0, tech: 0, biotics: 0
+    };
+
+    // Add class bonuses
+    if (classSelect && classSelect.value) {
+        const classBonuses = getClassBonuses(classSelect.value);
+        Object.keys(classBonuses).forEach(attr => {
+            totalBonuses[attr] += classBonuses[attr];
+        });
+    }
+
+    // Add race bonuses
+    if (raceSelect && raceSelect.value) {
+        const raceBonuses = getRaceBonuses(raceSelect.value);
+        Object.keys(raceBonuses).forEach(attr => {
+            totalBonuses[attr] += raceBonuses[attr];
+        });
+    }
+
+    // Update the form fields with calculated values
+    Object.keys(totalBonuses).forEach(attr => {
+        const element = document.getElementById(attr);
+        if (element) {
+            element.value = totalBonuses[attr];
+        }
+    });
+
+    // Calculate derived stats based on attributes
+    updateDerivedStats();
+}
+
+function updateDerivedStats() {
+    // Get current attribute values
+    const health = parseInt(document.getElementById('health').value) || 0;
+    const tech = parseInt(document.getElementById('tech').value) || 0;
+    const biotics = parseInt(document.getElementById('biotics').value) || 0;
+
+    // Calculate derived values (each attribute point = 5 points in derived stat)
+    const hpMax = health * 5;
+    const techPointsMax = tech * 5;
+    const bioticEnergyMax = biotics * 5;
+
+    // Update max values
+    setValue('hp-max', hpMax);
+    setValue('tech-points-max', techPointsMax);
+    setValue('biotic-energy-max', bioticEnergyMax);
+
+    // Update current values only if they're 0 or greater than max (to prevent losing current values)
+    const hpCurrent = parseInt(document.getElementById('hp-current').value) || 0;
+    const techCurrent = parseInt(document.getElementById('tech-points-current').value) || 0;
+    const bioticCurrent = parseInt(document.getElementById('biotic-energy-current').value) || 0;
+
+    if (hpCurrent === 0 || hpCurrent > hpMax) {
+        setValue('hp-current', hpMax);
+    }
+    if (techCurrent === 0 || techCurrent > techPointsMax) {
+        setValue('tech-points-current', techPointsMax);
+    }
+    if (bioticCurrent === 0 || bioticCurrent > bioticEnergyMax) {
+        setValue('biotic-energy-current', bioticEnergyMax);
+    }
+}
+
+function getClassBonuses(className) {
+    const bonuses = {};
+
+    switch(className) {
+        case 'Soldier':
+            bonuses.combat = 2;
+            break;
+        case 'Engineer':
+            bonuses.tech = 2;
+            break;
+        case 'Adept':
+            bonuses.biotics = 2;
+            break;
+        case 'Vanguard':
+            bonuses.combat = 1;
+            bonuses.biotics = 1;
+            break;
+        case 'Sentinel':
+            bonuses.tech = 1;
+            bonuses.biotics = 1;
+            break;
+        case 'Infiltrator':
+            bonuses.combat = 1;
+            bonuses.tech = 1;
+            break;
+    }
+
+    return bonuses;
+}
+
+function getRaceBonuses(raceName) {
+    const bonuses = {};
+
+    switch(raceName) {
+        case 'Human':
+            bonuses.health = 5;
+            bonuses.combat = 0;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = 0;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            // Note: +1 to stat of choice is handled separately
+            break;
+        case 'Asari':
+            bonuses.health = 5;
+            bonuses.combat = 0;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = 0;
+            bonuses.tech = 0;
+            bonuses.biotics = 1;
+            break;
+        case 'Turian':
+            bonuses.health = 5;
+            bonuses.combat = 1;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = 0;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            break;
+        case 'Krogan':
+            bonuses.health = 7;
+            bonuses.combat = 1;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = -1;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            break;
+        case 'Salarian':
+            bonuses.health = 4;
+            bonuses.combat = 0;
+            bonuses.evasion = 5;
+            bonuses.speed = 5;
+            bonuses.charisma = 0;
+            bonuses.tech = 1;
+            bonuses.biotics = 0;
+            break;
+        case 'Quarian':
+            bonuses.health = 4;
+            bonuses.combat = 0;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = 0;
+            bonuses.tech = 2;
+            bonuses.biotics = 0;
+            break;
+        case 'Drell':
+            bonuses.health = 5;
+            bonuses.combat = 1;
+            bonuses.evasion = 5;
+            bonuses.speed = 5;
+            bonuses.charisma = 0;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            break;
+        case 'Batarian':
+            bonuses.health = 5;
+            bonuses.combat = 1;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = -1;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            break;
+        case 'Vorcha':
+            bonuses.health = 6;
+            bonuses.combat = 1;
+            bonuses.evasion = 4;
+            bonuses.speed = 4;
+            bonuses.charisma = -2;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            break;
+        case 'Volus':
+            bonuses.health = 3;
+            bonuses.combat = 0;
+            bonuses.evasion = 4;
+            bonuses.speed = 3;
+            bonuses.charisma = 2;
+            bonuses.tech = 0;
+            bonuses.biotics = 0;
+            break;
+    }
+
+    return bonuses;
 }
 
 function updateClassDescription() {
@@ -1398,23 +2008,18 @@ function updateRaceDescription() {
 
 function updateBackgroundDescription() {
     const backgroundSelect = document.getElementById('character-background');
-    const descField = document.getElementById('background-description');
     const effectsField = document.getElementById('background-effects');
-    const descFieldContainer = document.getElementById('background-description-field');
     const effectsFieldContainer = document.getElementById('background-effects-field');
 
-    if (!backgroundSelect || !descField || !effectsField) return;
+    if (!backgroundSelect || !effectsField) return;
 
     const selectedBackground = backgroundSelect.value;
 
     if (selectedBackground && backgroundData[selectedBackground]) {
         const data = backgroundData[selectedBackground];
-        descField.value = data.description;
         effectsField.value = data.effects;
-        descFieldContainer.style.display = 'block';
         effectsFieldContainer.style.display = 'block';
     } else {
-        descFieldContainer.style.display = 'none';
         effectsFieldContainer.style.display = 'none';
     }
 }
@@ -1452,10 +2057,83 @@ function updateEquipmentDescription(equipmentType) {
         // Always show effects for all equipment types
         effectsField.value = data.effects;
         effectsFieldContainer.style.display = 'block';
+
+        // Special handling for armor to update armor-value and barrier fields
+        if (equipmentType === 'armor') {
+            const armorValueField = document.getElementById('armor-value');
+            if (armorValueField && data.effects) {
+                // Extract armor rating from effects text
+                const armorRatingMatch = data.effects.match(/Armor Rating:\s*(\d+)/);
+                if (armorRatingMatch) {
+                    armorValueField.value = armorRatingMatch[1];
+                }
+
+                // Extract barriers value and update appropriate barrier type based on class
+                const barriersMatch = data.effects.match(/Barriers:\s*(\d+)/);
+                if (barriersMatch) {
+                    updateBarriers(parseInt(barriersMatch[1]));
+                } else {
+                    // No barriers mentioned in this armor, set to 0
+                    updateBarriers(0);
+                }
+            }
+        }
     } else {
         // Hide both fields when nothing is selected
         if (descFieldContainer) descFieldContainer.style.display = 'none';
         effectsFieldContainer.style.display = 'none';
+
+        // Clear armor value and barriers when no armor is selected
+        if (equipmentType === 'armor') {
+            const armorValueField = document.getElementById('armor-value');
+            if (armorValueField) {
+                armorValueField.value = '0';
+            }
+            // Clear barriers when no armor is equipped
+            updateBarriers(0);
+        }
+    }
+}
+
+// Update barriers based on character class and armor
+function updateBarriers(barriersValue) {
+    const classElement = document.getElementById('character-class');
+    if (!classElement || !classElement.value) return;
+
+    const characterClass = classElement.value;
+
+    // Define which classes use which barrier types
+    const kineticClasses = ['soldier', 'engineer', 'infiltrator'];
+    const bioticClasses = ['adept', 'vanguard', 'sentinel'];
+
+    let targetBarrierType = null;
+
+    if (kineticClasses.includes(characterClass.toLowerCase())) {
+        targetBarrierType = 'kinetic';
+    } else if (bioticClasses.includes(characterClass.toLowerCase())) {
+        targetBarrierType = 'biotic';
+    }
+
+    if (targetBarrierType) {
+        // Update both current and max values for the appropriate barrier type
+        const currentField = document.getElementById(`${targetBarrierType === 'kinetic' ? 'kb' : 'bb'}-current`);
+        const maxField = document.getElementById(`${targetBarrierType === 'kinetic' ? 'kb' : 'bb'}-max`);
+
+        if (currentField && maxField) {
+            maxField.value = barriersValue;
+            // Set current to max value when armor changes (full barriers)
+            currentField.value = barriersValue;
+        }
+
+        // Clear the other barrier type when armor is equipped
+        const otherBarrierType = targetBarrierType === 'kinetic' ? 'biotic' : 'kinetic';
+        const otherCurrentField = document.getElementById(`${otherBarrierType === 'kinetic' ? 'kb' : 'bb'}-current`);
+        const otherMaxField = document.getElementById(`${otherBarrierType === 'kinetic' ? 'kb' : 'bb'}-max`);
+
+        if (otherCurrentField && otherMaxField) {
+            otherCurrentField.value = '0';
+            otherMaxField.value = '0';
+        }
     }
 }
 

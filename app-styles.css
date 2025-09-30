@@ -1406,6 +1406,42 @@ button:focus {
 }
 
 /* High contrast mode support */
+/* =========================
+   CLEAR BUTTON
+   ========================= */
+.clear-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #334155;
+    text-align: center;
+}
+
+.clear-btn {
+    background: linear-gradient(45deg, #7f1d1d, #991b1b);
+    color: #fecaca;
+    border: 1px solid #dc2626;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.clear-btn:hover {
+    background: linear-gradient(45deg, #991b1b, #b91c1c);
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
+    transform: translateY(-2px);
+}
+
+.clear-btn:active {
+    transform: translateY(0);
+}
+
 @media (prefers-contrast: high) {
     body {
         background: #000;
